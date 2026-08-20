@@ -327,4 +327,4 @@ Potential next steps for extending this project:
 
 ## Author
 
-Built by **stennismith@gmail.com** as part of the WomenTechsters program.
+Built by **maryakussah123@gmail.com** as part of the WomenTechsters program.
