@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/*
+  Brand palette pulled from the BestMart logo:
+  - navy/blue = the cart + "B" (trust, structure -> nav, links, primary actions)
+  - orange    = the price tag + "mart" wordmark (energy, action -> CTAs, highlights)
+  Using Tailwind v4's CSS-based theme: every --color-* token below automatically
+  becomes utility classes, e.g. --color-brand-blue -> bg-brand-blue, text-brand-blue, etc.
+*/
+@theme {
+  --color-brand-navy: #0a1a3c;
+  --color-brand-blue-dark: #0f2f8f;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-blue-light: #3b82f6;
+  --color-brand-orange-dark: #ea580c;
+  --color-brand-orange: #f97316;
+  --color-brand-orange-light: #fb923c;
+}

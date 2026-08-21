@@ -1,4 +1,5 @@
 import { HiOutlineUsers, HiOutlineGlobeAlt, HiOutlineSparkles, HiOutlineHeart } from 'react-icons/hi'
+import storyImg from '../assets/about-story.jpg'
 
 const values = [
   {
@@ -33,10 +34,10 @@ const stats = [
 function About() {
   return (
     <div>
-      <section className="bg-violet-600 py-20">
+      <section className="bg-brand-navy py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-extrabold text-white">About BestMart</h1>
-          <p className="mt-4 text-violet-100 text-lg">
+          <p className="mt-4 text-blue-100 text-lg">
             We're on a mission to make everyday shopping simple, affordable, and reliable for
             everyone — one order at a time.
           </p>
@@ -45,6 +46,11 @@ function About() {
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-2 gap-10 items-center">
+          <img
+            src={storyImg}
+            alt="A BestMart seller running her business"
+            className="rounded-2xl shadow-md w-full h-full object-cover max-h-96"
+          />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Our Story</h2>
             <p className="mt-4 text-gray-600 leading-relaxed">
@@ -54,22 +60,23 @@ function About() {
               prices.
             </p>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Today, we partner with thousands of sellers across the country to bring you
-              groceries, electronics, fashion, and more — all backed by fast delivery and
-              dependable customer support.
+              Today, we partner with hundreds of sellers across Ghana to bring you groceries,
+              electronics, fashion, and more — all backed by fast delivery and dependable
+              customer support.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-gray-50 rounded-xl p-6 text-center border border-gray-100"
-              >
-                <div className="text-2xl font-extrabold text-violet-600">{stat.value}</div>
-                <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+        </div>
+
+        <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-gray-50 rounded-xl p-6 text-center border border-gray-100"
+            >
+              <div className="text-2xl font-extrabold text-brand-blue">{stat.value}</div>
+              <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -79,8 +86,8 @@ function About() {
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map(({ icon: Icon, title, text }) => (
               <div key={title} className="text-center">
-                <div className="w-14 h-14 mx-auto rounded-full bg-violet-100 flex items-center justify-center mb-4">
-                  <Icon className="text-violet-600" size={26} />
+                <div className="w-14 h-14 mx-auto rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                  <Icon className="text-brand-blue" size={26} />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
                 <p className="text-sm text-gray-600">{text}</p>

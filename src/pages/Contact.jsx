@@ -5,8 +5,8 @@ import TextArea from '../components/ui/TextArea'
 import Button from '../components/ui/Button'
 
 const details = [
-  { icon: HiOutlineLocationMarker, title: 'Address', text: '123 Market Street, Lagos, Nigeria' },
-  { icon: HiOutlinePhone, title: 'Phone', text: '+234 800 123 4567' },
+  { icon: HiOutlineLocationMarker, title: 'Address', text: '123 Oxford Street, Accra, Ghana' },
+  { icon: HiOutlinePhone, title: 'Phone', text: '+233 30 123 4567' },
   { icon: HiOutlineMail, title: 'Email', text: 'support@bestmart.com' },
   { icon: HiOutlineClock, title: 'Working Hours', text: 'Mon – Sat: 8am – 8pm' },
 ]
@@ -40,10 +40,10 @@ function Contact() {
 
   return (
     <div>
-      <section className="bg-violet-600 py-16">
+      <section className="bg-brand-navy py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-extrabold text-white">Get in Touch</h1>
-          <p className="mt-4 text-violet-100 text-lg">
+          <p className="mt-4 text-blue-100 text-lg">
             Have a question or need help with an order? We'd love to hear from you.
           </p>
         </div>
@@ -53,8 +53,8 @@ function Contact() {
         <div className="lg:col-span-1 space-y-6">
           {details.map(({ icon: Icon, title, text }) => (
             <div key={title} className="flex items-start gap-4">
-              <div className="w-11 h-11 shrink-0 rounded-lg bg-violet-100 flex items-center justify-center">
-                <Icon className="text-violet-600" size={20} />
+              <div className="w-11 h-11 shrink-0 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Icon className="text-brand-blue" size={20} />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">{title}</h3>

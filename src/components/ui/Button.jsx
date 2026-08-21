@@ -1,7 +1,8 @@
 const variants = {
-  primary: 'bg-violet-600 text-white hover:bg-violet-700',
-  outline: 'border border-violet-600 text-violet-600 hover:bg-violet-50',
-  ghost: 'text-violet-600 hover:bg-violet-50',
+  primary: 'bg-brand-blue text-white hover:bg-brand-blue-dark',
+  accent: 'bg-brand-orange text-white hover:bg-brand-orange-dark',
+  outline: 'border border-brand-blue text-brand-blue hover:bg-blue-50',
+  ghost: 'text-brand-blue hover:bg-blue-50',
 }
 
 function Button({ children, type = 'button', variant = 'primary', className = '', ...props }) {

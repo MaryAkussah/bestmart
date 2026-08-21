@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { HiOutlineShoppingBag } from 'react-icons/hi2'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
+import { useAuth } from '../context/AuthContext'
 
 function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState({})
-  const [submitted, setSubmitted] = useState(false)
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -27,23 +29,20 @@ function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) setSubmitted(true)
+    if (validate()) {
+      login({ name: form.name, email: form.email })
+      navigate('/dashboard', { replace: true })
+    }
   }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="flex flex-col items-center mb-6">
-          <HiOutlineShoppingBag className="text-violet-600" size={32} />
+          <HiOutlineShoppingBag className="text-brand-blue" size={32} />
           <h1 className="text-2xl font-bold text-gray-900 mt-2">Create your account</h1>
           <p className="text-sm text-gray-500 mt-1">Join BestMart and start shopping today</p>
         </div>
-
-        {submitted && (
-          <div className="mb-4 rounded-lg bg-green-50 text-green-700 text-sm px-4 py-2.5">
-            Account created successfully!
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} noValidate>
           <Input
@@ -90,7 +89,7 @@ function Signup() {
             <input
               type="checkbox"
               required
-              className="mt-0.5 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              className="mt-0.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
             />
             I agree to the Terms of Service and Privacy Policy
           </label>
@@ -102,7 +101,7 @@ function Signup() {
 
         <p className="text-center text-sm text-gray-600 mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-violet-600 font-medium hover:underline">
+          <Link to="/login" className="text-brand-blue font-medium hover:underline">
             Log in
           </Link>
         </p>

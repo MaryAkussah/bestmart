@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { HiOutlineTruck, HiOutlineShieldCheck, HiOutlineTag, HiOutlineSupport } from 'react-icons/hi'
-import heroImg from '../assets/hero.png'
+import heroImg from '../assets/logo-glow.png'
 import Button from '../components/ui/Button'
+import { categoryImages } from '../data/categoryImages'
 
 const features = [
   {
@@ -33,29 +34,33 @@ function Home() {
     <div>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <span className="inline-block px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold mb-4">
-            Welcome to BestMart
+          <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-semibold mb-4">
+            Publish · Advertise · Sell
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
-            Everything you need, <span className="text-violet-600">delivered best.</span>
+            Everything you need, <span className="text-brand-orange">delivered best.</span>
           </h1>
           <p className="mt-5 text-gray-600 text-lg max-w-lg">
             Discover thousands of quality products across groceries, electronics, fashion and
             more — all in one marketplace built for you.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link to="/signup">
-              <Button className="px-8 py-3 text-base">Get Started</Button>
+            <Link to="/shop">
+              <Button variant="accent" className="px-8 py-3 text-base">Shop Now</Button>
             </Link>
-            <Link to="/about">
+            <Link to="/signup">
               <Button variant="outline" className="px-8 py-3 text-base">
-                Learn More
+                Sell on BestMart
               </Button>
             </Link>
           </div>
         </div>
         <div className="flex justify-center">
-          <img src={heroImg} alt="BestMart" className="w-72 sm:w-96 drop-shadow-2xl" />
+          <img
+            src={heroImg}
+            alt="BestMart — Publish, Advertise, Sell"
+            className="w-full max-w-md rounded-2xl shadow-2xl"
+          />
         </div>
       </section>
 
@@ -63,8 +68,8 @@ function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map(({ icon: Icon, title, text }) => (
             <div key={title} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="w-12 h-12 rounded-lg bg-violet-100 flex items-center justify-center mb-4">
-                <Icon className="text-violet-600" size={24} />
+              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center mb-4">
+                <Icon className="text-brand-blue" size={24} />
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
               <p className="text-sm text-gray-600">{text}</p>
@@ -82,27 +87,35 @@ function Home() {
         </p>
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {categories.map((cat) => (
-            <div
+            <Link
               key={cat}
-              className="rounded-xl border border-gray-200 hover:border-violet-400 hover:shadow-md transition p-6 text-center cursor-pointer"
+              to="/shop"
+              className="group rounded-xl overflow-hidden border border-gray-200 hover:border-brand-blue-light hover:shadow-md transition cursor-pointer"
             >
-              <div className="w-10 h-10 mx-auto rounded-full bg-violet-100 mb-3" />
-              <span className="text-sm font-medium text-gray-800">{cat}</span>
-            </div>
+              <div className="aspect-square overflow-hidden">
+                <img
+                  src={categoryImages[cat]}
+                  alt={cat}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                />
+              </div>
+              <span className="block text-sm font-medium text-gray-800 text-center py-3">{cat}</span>
+            </Link>
           ))}
         </div>
       </section>
 
-      <section className="bg-violet-600">
+      <section className="bg-brand-navy">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white">
-            Ready to start shopping smarter?
+            Ready to publish, advertise and sell?
           </h2>
-          <p className="text-violet-100 mt-2 max-w-xl mx-auto">
-            Create a free account today and enjoy exclusive deals only for BestMart members.
+          <p className="text-blue-100 mt-2 max-w-xl mx-auto">
+            Create a free seller account today and put your business in front of thousands of
+            shoppers on BestMart.
           </p>
           <Link to="/signup">
-            <Button className="mt-8 bg-white text-violet-700 hover:bg-violet-50 px-8 py-3 text-base">
+            <Button variant="accent" className="mt-8 px-8 py-3 text-base">
               Create your account
             </Button>
           </Link>
