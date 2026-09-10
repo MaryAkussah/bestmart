@@ -8,6 +8,7 @@ import { getPasswordError, generatePassword, PASSWORD_REQUIREMENTS_TEXT } from '
 
 function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -42,6 +43,7 @@ function Signup() {
     const passwordError = getPasswordError(form.password)
     if (passwordError) next.password = passwordError
     if (form.confirmPassword !== form.password) next.confirmPassword = 'Passwords do not match'
+    if (!agreedToTerms) next.terms = 'You must agree to the Terms of Service and Privacy Policy'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -148,14 +150,21 @@ function Signup() {
             onToggleVisibility={() => setShowPassword((prev) => !prev)}
           />
 
-          <label className="flex items-start gap-2 text-sm text-gray-600 mb-6">
-            <input
-              type="checkbox"
-              required
-              className="mt-0.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-            />
-            I agree to the Terms of Service and Privacy Policy
-          </label>
+          <div className="mb-6">
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => {
+                  setAgreedToTerms(e.target.checked)
+                  setErrors((prev) => ({ ...prev, terms: undefined }))
+                }}
+                className="mt-0.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+              />
+              I agree to the Terms of Service and Privacy Policy
+            </label>
+            {errors.terms && <p className="mt-1 text-sm text-red-500">{errors.terms}</p>}
+          </div>
 
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? 'Creating account...' : 'Create Account'}
