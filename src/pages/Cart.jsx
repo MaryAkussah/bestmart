@@ -9,10 +9,19 @@ import { getPrimaryImage } from '../utils/productImages'
 function Cart() {
   const { items, removeFromCart, updateQty, total, checkout } = useCart()
   const [placedOrder, setPlacedOrder] = useState(null)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleCheckout = () => {
-    const order = checkout()
-    if (order) setPlacedOrder(order)
+  const handleCheckout = async () => {
+    setSubmitting(true)
+    const result = await checkout()
+    setSubmitting(false)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    setPlacedOrder(result.order)
   }
 
   if (placedOrder) {
@@ -87,8 +96,12 @@ function Cart() {
         <span className="text-2xl font-bold text-gray-900">₵{total}</span>
       </div>
 
-      <Button variant="accent" className="w-full mt-4" onClick={handleCheckout}>
-        Checkout
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 text-red-700 text-sm px-4 py-2.5">{error}</div>
+      )}
+
+      <Button variant="accent" className="w-full mt-4" onClick={handleCheckout} disabled={submitting}>
+        {submitting ? 'Placing order...' : 'Checkout'}
       </Button>
     </div>
   )

@@ -1,24 +1,47 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { HiOutlineCube, HiOutlineMegaphone, HiOutlineShoppingBag, HiOutlineCurrencyDollar } from 'react-icons/hi2'
 import { useAuth } from '../../context/AuthContext'
 import { useProducts } from '../../context/ProductsContext'
 import { useLocalStorageList } from '../../hooks/useLocalStorageList'
+import { supabase } from '../../lib/supabaseClient'
 
 function Dashboard() {
   const { user } = useAuth()
   const { products } = useProducts()
   const [ads] = useLocalStorageList('bestmart_ads', [])
-  const [orders] = useLocalStorageList('bestmart_orders', [])
+  const [orderStats, setOrderStats] = useState({ orderCount: 0, revenue: 0 })
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+
+    supabase
+      .from('order_items')
+      .select('order_id, price, qty')
+      .eq('seller_id', user.id)
+      .then(({ data }) => {
+        if (!active) return
+        const rows = data ?? []
+        setOrderStats({
+          orderCount: new Set(rows.map((r) => r.order_id)).size,
+          revenue: rows.reduce((sum, r) => sum + r.price * r.qty, 0),
+        })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [user])
 
   const myProducts = products.filter((p) => p.sellerAdded)
   const activeAds = ads.filter((ad) => ad.status === 'active')
-  const revenue = orders.reduce((sum, order) => sum + order.total, 0)
 
   const stats = [
     { icon: HiOutlineCube, label: 'Products Listed', value: String(myProducts.length) },
     { icon: HiOutlineMegaphone, label: 'Active Ads', value: String(activeAds.length) },
-    { icon: HiOutlineShoppingBag, label: 'Orders', value: String(orders.length) },
-    { icon: HiOutlineCurrencyDollar, label: 'Revenue', value: `₵${revenue}` },
+    { icon: HiOutlineShoppingBag, label: 'Orders', value: String(orderStats.orderCount) },
+    { icon: HiOutlineCurrencyDollar, label: 'Revenue', value: `₵${orderStats.revenue}` },
   ]
 
   return (

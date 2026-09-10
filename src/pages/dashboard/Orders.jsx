@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { HiOutlineShoppingBag } from 'react-icons/hi2'
-import { useLocalStorageList } from '../../hooks/useLocalStorageList'
+import { supabase } from '../../lib/supabaseClient'
+import { useAuth } from '../../context/AuthContext'
 import { getPrimaryImage } from '../../utils/productImages'
 
 const STATUS_FLOW = ['Processing', 'Shipped', 'Delivered']
@@ -14,19 +16,64 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function Orders() {
-  const [orders, setOrders] = useLocalStorageList('bestmart_orders', [])
+// order_items row -> the display shape the UI already expects (name,
+// category, images, etc. live in `snapshot`, taken at checkout time).
+function rowToLineItem(row) {
+  return { ...row.snapshot, id: row.product_id, qty: row.qty, price: row.price }
+}
 
-  const advanceStatus = (id) => {
-    setOrders((prev) =>
-      prev.map((order) => {
-        if (order.id !== id) return order
-        const nextIndex = STATUS_FLOW.indexOf(order.status) + 1
-        if (nextIndex >= STATUS_FLOW.length) return order
-        return { ...order, status: STATUS_FLOW[nextIndex] }
+function Orders() {
+  const { user } = useAuth()
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+
+    supabase
+      .from('orders')
+      .select('id, created_at, status, order_items(id, product_id, price, qty, snapshot)')
+      .eq('order_items.seller_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!active) return
+        const shaped = (data ?? [])
+          .filter((o) => o.order_items.length > 0)
+          .map((o) => {
+            const items = o.order_items.map(rowToLineItem)
+            return {
+              id: o.id,
+              createdAt: o.created_at,
+              status: o.status,
+              items,
+              // Only this seller's share of the order — a single checkout
+              // can include other sellers' products too.
+              total: items.reduce((sum, item) => sum + item.qty * item.price, 0),
+            }
+          })
+        setOrders(shaped)
+        setLoading(false)
       })
-    )
+
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  const advanceStatus = async (id) => {
+    const order = orders.find((o) => o.id === id)
+    const nextIndex = STATUS_FLOW.indexOf(order.status) + 1
+    if (nextIndex >= STATUS_FLOW.length) return
+    const nextStatus = STATUS_FLOW[nextIndex]
+
+    const { error } = await supabase.from('orders').update({ status: nextStatus }).eq('id', id)
+    if (error) return
+
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)))
   }
+
+  if (loading) return null
 
   return (
     <div className="p-6 sm:p-8">

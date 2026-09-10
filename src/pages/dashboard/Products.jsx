@@ -12,6 +12,7 @@ import Button from '../../components/ui/Button'
 import { useProducts } from '../../context/ProductsContext'
 import { useAuth } from '../../context/AuthContext'
 import { getProductImages, getPrimaryImage } from '../../utils/productImages'
+import { supabase } from '../../lib/supabaseClient'
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB — data URLs live in localStorage, so keep this modest
 const MAX_IMAGES = 10
@@ -28,13 +29,15 @@ function Products() {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleImagesChange = (e) => {
+  const handleImagesChange = async (e) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
@@ -60,15 +63,25 @@ function Products() {
       setErrors((prev) => ({ ...prev, images: undefined }))
     }
 
-    toAdd.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setForm((prev) => ({ ...prev, images: [...prev.images, reader.result].slice(0, MAX_IMAGES) }))
-      }
-      reader.readAsDataURL(file)
-    })
-
     if (fileInputRef.current) fileInputRef.current.value = ''
+    if (toAdd.length === 0) return
+
+    setUploadingImages(true)
+    const uploaded = await Promise.all(
+      toAdd.map(async (file) => {
+        const path = `${user.id}/${crypto.randomUUID()}-${file.name}`
+        const { error } = await supabase.storage.from('product-images').upload(path, file)
+        if (error) return null
+        return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl
+      })
+    )
+    setUploadingImages(false)
+
+    const successUrls = uploaded.filter(Boolean)
+    if (successUrls.length < toAdd.length) {
+      setErrors((prev) => ({ ...prev, images: 'Some photos failed to upload — please try again' }))
+    }
+    setForm((prev) => ({ ...prev, images: [...prev.images, ...successUrls].slice(0, MAX_IMAGES) }))
   }
 
   const handleRemoveImage = (index) => {
@@ -116,7 +129,7 @@ function Products() {
     setErrors({})
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
 
@@ -125,25 +138,25 @@ function Products() {
       category: form.category,
       price: Number(form.price),
       images: form.images,
-      image: undefined, // fully replaced by the gallery — clears any legacy single-image value
-      ...(form.oldPrice ? { oldPrice: Number(form.oldPrice) } : { oldPrice: undefined }),
+      oldPrice: form.oldPrice ? Number(form.oldPrice) : undefined,
     }
 
-    if (editingId) {
-      updateProduct(editingId, payload)
-    } else {
-      addProduct({
-        ...payload,
-        seller: user?.businessName || user?.name || 'You',
-        sellerAdded: true,
-      })
+    setSubmitting(true)
+    const result = editingId
+      ? await updateProduct(editingId, payload)
+      : await addProduct({ ...payload, seller: user?.businessName || user?.name || 'You' })
+    setSubmitting(false)
+
+    if (!result.ok) {
+      setErrors((prev) => ({ ...prev, form: result.error }))
+      return
     }
     closeForm()
   }
 
-  const handleDelete = (product) => {
+  const handleDelete = async (product) => {
     if (window.confirm(`Remove "${product.name}" from your listings?`)) {
-      deleteProduct(product.id)
+      await deleteProduct(product.id)
     }
   }
 
@@ -179,6 +192,12 @@ function Products() {
             </button>
           </div>
 
+          {errors.form && (
+            <div className="mb-4 rounded-lg bg-red-50 text-red-700 text-sm px-4 py-2.5">
+              {errors.form}
+            </div>
+          )}
+
           {/* Product photos */}
           <div className="mb-5">
             <div className="flex items-center justify-between mb-1.5">
@@ -206,14 +225,17 @@ function Products() {
               ))}
 
               {form.images.length < MAX_IMAGES && (
-                <label className="aspect-square rounded-lg border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-brand-blue hover:bg-blue-50 transition">
+                <label className={`aspect-square rounded-lg border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-1 transition ${uploadingImages ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:border-brand-blue hover:bg-blue-50'}`}>
                   <HiOutlineArrowUpTray className="text-gray-400" size={16} />
-                  <span className="text-[10px] text-gray-400 text-center px-1">Add Photo</span>
+                  <span className="text-[10px] text-gray-400 text-center px-1">
+                    {uploadingImages ? 'Uploading...' : 'Add Photo'}
+                  </span>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     multiple
+                    disabled={uploadingImages}
                     onChange={handleImagesChange}
                     className="hidden"
                   />
@@ -285,7 +307,9 @@ function Products() {
           </div>
 
           <div className="flex gap-3">
-            <Button type="submit">{editingId ? 'Save Changes' : 'Add Product'}</Button>
+            <Button type="submit" disabled={submitting || uploadingImages}>
+              {submitting ? 'Saving...' : editingId ? 'Save Changes' : 'Add Product'}
+            </Button>
             <Button type="button" variant="ghost" onClick={closeForm}>
               Cancel
             </Button>
