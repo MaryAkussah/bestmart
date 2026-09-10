@@ -121,6 +121,7 @@ function Signup() {
             value={form.password}
             onChange={handleChange}
             error={errors.password}
+            onToggleVisibility={() => setShowPassword((prev) => !prev)}
             labelAction={
               <button
                 type="button"
@@ -144,6 +145,7 @@ function Signup() {
             value={form.confirmPassword}
             onChange={handleChange}
             error={errors.confirmPassword}
+            onToggleVisibility={() => setShowPassword((prev) => !prev)}
           />
 
           <label className="flex items-start gap-2 text-sm text-gray-600 mb-6">

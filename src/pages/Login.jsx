@@ -9,6 +9,7 @@ function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { authenticate } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -69,13 +70,14 @@ function Login() {
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             label="Password"
             placeholder="••••••••"
             value={form.password}
             onChange={handleChange}
             error={errors.password}
+            onToggleVisibility={() => setShowPassword((prev) => !prev)}
           />
 
           <div className="flex items-center justify-between mb-6 text-sm">

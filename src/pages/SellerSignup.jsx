@@ -180,6 +180,7 @@ function SellerSignup() {
                   value={form.password}
                   onChange={handleChange}
                   error={errors.password}
+                  onToggleVisibility={() => setShowPassword((prev) => !prev)}
                   labelAction={
                     <button
                       type="button"
@@ -200,6 +201,7 @@ function SellerSignup() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   error={errors.confirmPassword}
+                  onToggleVisibility={() => setShowPassword((prev) => !prev)}
                 />
               </div>
               {!errors.password && (

@@ -136,6 +136,7 @@ function ResetPassword() {
               value={form.password}
               onChange={handleChange}
               error={errors.password}
+              onToggleVisibility={() => setShowPassword((prev) => !prev)}
               labelAction={
                 <button
                   type="button"
@@ -159,6 +160,7 @@ function ResetPassword() {
               value={form.confirmPassword}
               onChange={handleChange}
               error={errors.confirmPassword}
+              onToggleVisibility={() => setShowPassword((prev) => !prev)}
             />
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? 'Resetting...' : 'Reset password'}
