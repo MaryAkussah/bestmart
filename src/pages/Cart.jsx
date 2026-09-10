@@ -33,7 +33,7 @@ function Cart() {
           Order #{String(placedOrder.id).slice(-6)} for ₵{placedOrder.total} is on its way.
         </p>
         <div className="mt-6 flex flex-wrap gap-3 justify-center">
-          <Link to="/dashboard/orders">
+          <Link to="/profile">
             <Button variant="accent">Track Your Order</Button>
           </Link>
           <Link to="/">

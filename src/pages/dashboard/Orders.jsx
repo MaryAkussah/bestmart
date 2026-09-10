@@ -3,24 +3,9 @@ import { HiOutlineShoppingBag } from 'react-icons/hi2'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../context/AuthContext'
 import { getPrimaryImage } from '../../utils/productImages'
+import { ORDER_STATUS_STYLES, formatOrderDate, rowToLineItem } from '../../utils/orderLineItems'
 
 const STATUS_FLOW = ['Processing', 'Shipped', 'Delivered']
-
-const STATUS_STYLES = {
-  Processing: 'bg-yellow-100 text-yellow-800',
-  Shipped: 'bg-blue-100 text-blue-700',
-  Delivered: 'bg-green-100 text-green-700',
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-// order_items row -> the display shape the UI already expects (name,
-// category, images, etc. live in `snapshot`, taken at checkout time).
-function rowToLineItem(row) {
-  return { ...row.snapshot, id: row.product_id, qty: row.qty, price: row.price }
-}
 
 function Orders() {
   const { user } = useAuth()
@@ -96,10 +81,10 @@ function Orders() {
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100">
                 <div>
                   <p className="font-semibold text-gray-900">Order #{String(order.id).slice(-6)}</p>
-                  <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                  <p className="text-xs text-gray-500">{formatOrderDate(order.createdAt)}</p>
                 </div>
                 <span
-                  className={`text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${STATUS_STYLES[order.status]}`}
+                  className={`text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${ORDER_STATUS_STYLES[order.status]}`}
                 >
                   {order.status}
                 </span>

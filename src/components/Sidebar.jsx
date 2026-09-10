@@ -7,6 +7,7 @@ import {
   HiOutlineMegaphone,
   HiOutlineShoppingBag,
   HiOutlineCog6Tooth,
+  HiOutlineUserCircle,
 } from 'react-icons/hi2'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.png'
@@ -17,6 +18,9 @@ const links = [
   { to: '/dashboard/advertise', label: 'Advertise', icon: HiOutlineMegaphone },
   { to: '/dashboard/orders', label: 'Orders', icon: HiOutlineShoppingBag },
   { to: '/dashboard/settings', label: 'Settings', icon: HiOutlineCog6Tooth },
+  // A seller is still a buyer too — this is their personal account, not
+  // shop management, so it lives outside /dashboard entirely.
+  { to: '/profile', label: 'My Profile', icon: HiOutlineUserCircle },
 ]
 
 function SidebarLinks({ onNavigate }) {

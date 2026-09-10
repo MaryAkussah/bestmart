@@ -8,6 +8,7 @@ import Login from '../pages/Login'
 import Signup from '../pages/Signup'
 import ForgotPassword from '../pages/ForgotPassword'
 import ResetPassword from '../pages/ResetPassword'
+import Profile from '../pages/Profile'
 import Dashboard from '../pages/dashboard/Dashboard'
 import Products from '../pages/dashboard/Products'
 import Advertise from '../pages/dashboard/Advertise'
@@ -38,6 +39,13 @@ export const guestRoutes = [
   { path: '/forgot-password', element: ForgotPassword },
   { path: '/reset-password', element: ResetPassword },
 ]
+
+/**
+ * Logged-in, any role — unlike privateRoutes below, no isSeller
+ * requirement. Rendered on the normal Navbar+Footer chrome, not the
+ * dashboard sidebar, and guarded by AccountRoute instead of ProtectedRoute.
+ */
+export const accountRoutes = [{ path: '/profile', element: Profile }]
 
 /**
  * Everything here requires a logged-in user (seller dashboard area).

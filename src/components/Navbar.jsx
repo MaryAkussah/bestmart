@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { HiMenu, HiX } from 'react-icons/hi'
-import { HiOutlineShoppingCart, HiOutlineMagnifyingGlass, HiOutlineMegaphone } from 'react-icons/hi2'
+import { HiOutlineShoppingCart, HiOutlineMagnifyingGlass, HiOutlineMegaphone, HiOutlineUserCircle } from 'react-icons/hi2'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import logo from '../assets/logo.png'
@@ -89,6 +89,12 @@ function Navbar() {
             )}
           </Link>
 
+          {isAuthenticated && (
+            <Link to="/profile" className="p-2 text-gray-700 hover:text-brand-blue transition" aria-label="My profile">
+              <HiOutlineUserCircle size={22} />
+            </Link>
+          )}
+
           {isAuthenticated && user?.isSeller ? (
             <Link
               to="/dashboard"
@@ -107,14 +113,12 @@ function Navbar() {
           )}
 
           {isAuthenticated ? (
-            !user?.isSeller && (
-              <button
-                onClick={handleLogout}
-                className="text-sm font-medium text-gray-700 hover:text-brand-blue transition px-4 py-2 whitespace-nowrap"
-              >
-                Log out
-              </button>
-            )
+            <button
+              onClick={handleLogout}
+              className="text-sm font-medium text-gray-700 hover:text-brand-blue transition px-4 py-2 whitespace-nowrap"
+            >
+              Log out
+            </button>
           ) : (
             <>
               <Link
@@ -190,6 +194,16 @@ function Navbar() {
               </NavLink>
             ))}
 
+            {isAuthenticated && (
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="py-2.5 text-sm font-medium text-gray-700 border-b border-gray-100"
+              >
+                My Profile
+              </Link>
+            )}
+
             {isAuthenticated && user?.isSeller ? (
               <Link
                 to="/dashboard"
@@ -209,14 +223,12 @@ function Navbar() {
             )}
 
             {isAuthenticated ? (
-              !user?.isSeller && (
-                <button
-                  onClick={handleLogout}
-                  className="py-2.5 text-sm font-medium text-gray-700 text-center"
-                >
-                  Log out
-                </button>
-              )
+              <button
+                onClick={handleLogout}
+                className="py-2.5 text-sm font-medium text-gray-700 text-center"
+              >
+                Log out
+              </button>
             ) : (
               <>
                 <Link

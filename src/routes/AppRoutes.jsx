@@ -3,8 +3,9 @@ import UnauthWrapper from '../layouts/UnauthWrapper'
 import AuthWrapper from '../layouts/AuthWrapper'
 import ProtectedRoute from './ProtectedRoute'
 import GuestRoute from './GuestRoute'
+import AccountRoute from './AccountRoute'
 import NotFound from '../pages/NotFound'
-import { publicRoutes, guestRoutes, privateRoutes } from './routesConfig'
+import { publicRoutes, guestRoutes, accountRoutes, privateRoutes } from './routesConfig'
 
 // Home absorbed Shop's content — old /shop links (and any ?category=/?q=
 // they carried) still land on the right place instead of hitting NotFound.
@@ -14,12 +15,13 @@ function ShopRedirect() {
 }
 
 /**
- * The single source of truth for "what renders where". Three groups,
+ * The single source of truth for "what renders where". Four groups,
  * each wrapped in its own condition + shared layout:
  *
- *   publicRoutes  -> anyone            -> UnauthWrapper (navbar + footer)
- *   guestRoutes   -> only logged OUT   -> UnauthWrapper, guarded by GuestRoute
- *   privateRoutes -> only logged IN    -> AuthWrapper (sidebar), guarded by ProtectedRoute
+ *   publicRoutes  -> anyone              -> UnauthWrapper (navbar + footer)
+ *   guestRoutes   -> only logged OUT     -> UnauthWrapper, guarded by GuestRoute
+ *   accountRoutes -> logged IN, any role -> UnauthWrapper, guarded by AccountRoute
+ *   privateRoutes -> logged IN + seller  -> AuthWrapper (sidebar), guarded by ProtectedRoute
  *
  * Each group is just an array turned into <Route> elements with .map() —
  * to add a page, edit routesConfig.js, never this file.
@@ -35,6 +37,12 @@ function AppRoutes() {
 
         <Route element={<GuestRoute />}>
           {guestRoutes.map(({ path, element: Element }) => (
+            <Route key={path} path={path} element={<Element />} />
+          ))}
+        </Route>
+
+        <Route element={<AccountRoute />}>
+          {accountRoutes.map(({ path, element: Element }) => (
             <Route key={path} path={path} element={<Element />} />
           ))}
         </Route>
