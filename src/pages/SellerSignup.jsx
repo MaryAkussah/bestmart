@@ -137,6 +137,7 @@ function SellerSignup() {
             <Input
               id="name"
               name="name"
+              autoComplete="name"
               label="Your full name"
               placeholder="Jane Doe"
               value={form.name}
@@ -161,6 +162,7 @@ function SellerSignup() {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 label="Email address"
                 placeholder="you@example.com"
                 value={form.email}
@@ -172,6 +174,7 @@ function SellerSignup() {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   label="Password"
                   placeholder="••••••••"
                   value={form.password}
@@ -191,6 +194,7 @@ function SellerSignup() {
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   label="Confirm password"
                   placeholder="••••••••"
                   value={form.confirmPassword}

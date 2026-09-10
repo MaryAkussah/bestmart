@@ -130,6 +130,7 @@ function ResetPassword() {
               id="password"
               name="password"
               type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
               label="New password"
               placeholder="••••••••"
               value={form.password}
@@ -152,6 +153,7 @@ function ResetPassword() {
               id="confirmPassword"
               name="confirmPassword"
               type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
               label="Confirm new password"
               placeholder="••••••••"
               value={form.confirmPassword}

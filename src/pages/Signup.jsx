@@ -93,6 +93,7 @@ function Signup() {
           <Input
             id="name"
             name="name"
+            autoComplete="name"
             label="Full name"
             placeholder="Jane Doe"
             value={form.name}
@@ -103,6 +104,7 @@ function Signup() {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             label="Email address"
             placeholder="you@example.com"
             value={form.email}
@@ -113,6 +115,7 @@ function Signup() {
             id="password"
             name="password"
             type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
             label="Password"
             placeholder="••••••••"
             value={form.password}
@@ -135,6 +138,7 @@ function Signup() {
             id="confirmPassword"
             name="confirmPassword"
             type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
             label="Confirm password"
             placeholder="••••••••"
             value={form.confirmPassword}

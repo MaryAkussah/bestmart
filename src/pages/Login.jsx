@@ -59,6 +59,7 @@ function Login() {
             id="email"
             name="email"
             type="email"
+            autoComplete="email"
             label="Email address"
             placeholder="you@example.com"
             value={form.email}
@@ -69,6 +70,7 @@ function Login() {
             id="password"
             name="password"
             type="password"
+            autoComplete="current-password"
             label="Password"
             placeholder="••••••••"
             value={form.password}
