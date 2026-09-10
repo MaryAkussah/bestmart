@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { HiMenu, HiX } from 'react-icons/hi'
-import { HiOutlineShoppingCart, HiOutlineMagnifyingGlass, HiOutlineMegaphone, HiOutlineUserCircle } from 'react-icons/hi2'
+import { HiOutlineShoppingCart, HiOutlineMagnifyingGlass, HiOutlineMegaphone, HiOutlineUserCircle, HiOutlineChatBubbleLeftRight } from 'react-icons/hi2'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
+import { useUnreadMessages } from '../hooks/useUnreadMessages'
 import logo from '../assets/logo.png'
 
 const links = [
@@ -17,6 +18,7 @@ function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const { isAuthenticated, user, logout } = useAuth()
   const { count } = useCart()
+  const hasUnreadMessages = useUnreadMessages()
   const navigate = useNavigate()
 
   const linkClass = ({ isActive }) =>
@@ -88,6 +90,15 @@ function Navbar() {
               </span>
             )}
           </Link>
+
+          {isAuthenticated && (
+            <Link to="/messages" className="relative p-2 text-gray-700 hover:text-brand-blue transition" aria-label="Messages">
+              <HiOutlineChatBubbleLeftRight size={22} />
+              {hasUnreadMessages && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-brand-orange border-2 border-white" />
+              )}
+            </Link>
+          )}
 
           {isAuthenticated && (
             <Link to="/profile" className="p-2 text-gray-700 hover:text-brand-blue transition" aria-label="My profile">
@@ -193,6 +204,17 @@ function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+
+            {isAuthenticated && (
+              <Link
+                to="/messages"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 py-2.5 text-sm font-medium text-gray-700 border-b border-gray-100"
+              >
+                Messages
+                {hasUnreadMessages && <span className="w-2 h-2 rounded-full bg-brand-orange" />}
+              </Link>
+            )}
 
             {isAuthenticated && (
               <Link

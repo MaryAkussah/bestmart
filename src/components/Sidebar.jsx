@@ -8,8 +8,10 @@ import {
   HiOutlineShoppingBag,
   HiOutlineCog6Tooth,
   HiOutlineUserCircle,
+  HiOutlineChatBubbleLeftRight,
 } from 'react-icons/hi2'
 import { useAuth } from '../context/AuthContext'
+import { useUnreadMessages } from '../hooks/useUnreadMessages'
 import logo from '../assets/logo.png'
 
 const links = [
@@ -18,12 +20,15 @@ const links = [
   { to: '/dashboard/advertise', label: 'Advertise', icon: HiOutlineMegaphone },
   { to: '/dashboard/orders', label: 'Orders', icon: HiOutlineShoppingBag },
   { to: '/dashboard/settings', label: 'Settings', icon: HiOutlineCog6Tooth },
-  // A seller is still a buyer too — this is their personal account, not
-  // shop management, so it lives outside /dashboard entirely.
+  // Both live outside /dashboard's shop-management pages — a seller is
+  // still a buyer too, with their own personal account and messages.
+  { to: '/messages', label: 'Messages', icon: HiOutlineChatBubbleLeftRight },
   { to: '/profile', label: 'My Profile', icon: HiOutlineUserCircle },
 ]
 
 function SidebarLinks({ onNavigate }) {
+  const hasUnreadMessages = useUnreadMessages()
+
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
       isActive
@@ -37,6 +42,9 @@ function SidebarLinks({ onNavigate }) {
         <NavLink key={to} to={to} end={end} className={linkClass} onClick={onNavigate}>
           <Icon size={20} />
           {label}
+          {to === '/messages' && hasUnreadMessages && (
+            <span className="w-2 h-2 rounded-full bg-brand-orange" />
+          )}
         </NavLink>
       ))}
     </nav>

@@ -9,6 +9,7 @@ import Signup from '../pages/Signup'
 import ForgotPassword from '../pages/ForgotPassword'
 import ResetPassword from '../pages/ResetPassword'
 import Profile from '../pages/Profile'
+import Messages from '../pages/Messages'
 import Dashboard from '../pages/dashboard/Dashboard'
 import Products from '../pages/dashboard/Products'
 import Advertise from '../pages/dashboard/Advertise'
@@ -45,7 +46,10 @@ export const guestRoutes = [
  * requirement. Rendered on the normal Navbar+Footer chrome, not the
  * dashboard sidebar, and guarded by AccountRoute instead of ProtectedRoute.
  */
-export const accountRoutes = [{ path: '/profile', element: Profile }]
+export const accountRoutes = [
+  { path: '/profile', element: Profile },
+  { path: '/messages', element: Messages },
+]
 
 /**
  * Everything here requires a logged-in user (seller dashboard area).

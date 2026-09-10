@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { HiOutlineShoppingCart, HiOutlineHeart, HiHeart, HiStar } from 'react-icons/hi2'
+import { HiOutlineShoppingCart, HiOutlineHeart, HiHeart, HiStar, HiOutlineChatBubbleLeftRight } from 'react-icons/hi2'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { categoryImages } from '../data/categoryImages'
@@ -8,7 +8,7 @@ import { getProductImages } from '../utils/productImages'
 
 function ProductCard({ product }) {
   const { addToCart } = useCart()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [wishlisted, setWishlisted] = useState(false)
@@ -22,12 +22,26 @@ function ProductCard({ product }) {
     ? Math.round((1 - product.price / product.oldPrice) * 100)
     : null
 
+  // Only real sellers can be messaged — the static demo catalog has no
+  // seller_id, and there's no point messaging yourself about your own listing.
+  const canMessageSeller = product.sellerId && product.sellerId !== user?.id
+
   const handleAddToCart = () => {
     if (!isAuthenticated) {
       navigate('/signup', { state: { from: location } })
       return
     }
     addToCart(product)
+  }
+
+  const handleMessageSeller = () => {
+    if (!isAuthenticated) {
+      navigate('/signup', { state: { from: location } })
+      return
+    }
+    navigate(
+      `/messages?seller=${product.sellerId}&productId=${product.id}&productName=${encodeURIComponent(product.name)}`
+    )
   }
 
   return (
@@ -99,13 +113,24 @@ function ProductCard({ product }) {
               <span className="text-xs text-gray-400 line-through">₵{product.oldPrice}</span>
             )}
           </div>
-          <button
-            onClick={handleAddToCart}
-            aria-label="Add to cart"
-            className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-brand-orange hover:bg-brand-orange-dark text-white transition"
-          >
-            <HiOutlineShoppingCart size={16} />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {canMessageSeller && (
+              <button
+                onClick={handleMessageSeller}
+                aria-label="Message seller"
+                className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-brand-blue hover:border-brand-blue transition"
+              >
+                <HiOutlineChatBubbleLeftRight size={16} />
+              </button>
+            )}
+            <button
+              onClick={handleAddToCart}
+              aria-label="Add to cart"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-brand-orange hover:bg-brand-orange-dark text-white transition"
+            >
+              <HiOutlineShoppingCart size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
