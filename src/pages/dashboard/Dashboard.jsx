@@ -1,20 +1,30 @@
+import { Link } from 'react-router-dom'
 import { HiOutlineCube, HiOutlineMegaphone, HiOutlineShoppingBag, HiOutlineCurrencyDollar } from 'react-icons/hi2'
 import { useAuth } from '../../context/AuthContext'
-
-const stats = [
-  { icon: HiOutlineCube, label: 'Products Listed', value: '0' },
-  { icon: HiOutlineMegaphone, label: 'Active Ads', value: '0' },
-  { icon: HiOutlineShoppingBag, label: 'Orders', value: '0' },
-  { icon: HiOutlineCurrencyDollar, label: 'Revenue', value: '₵0' },
-]
+import { useProducts } from '../../context/ProductsContext'
+import { useLocalStorageList } from '../../hooks/useLocalStorageList'
 
 function Dashboard() {
   const { user } = useAuth()
+  const { products } = useProducts()
+  const [ads] = useLocalStorageList('bestmart_ads', [])
+  const [orders] = useLocalStorageList('bestmart_orders', [])
+
+  const myProducts = products.filter((p) => p.sellerAdded)
+  const activeAds = ads.filter((ad) => ad.status === 'active')
+  const revenue = orders.reduce((sum, order) => sum + order.total, 0)
+
+  const stats = [
+    { icon: HiOutlineCube, label: 'Products Listed', value: String(myProducts.length) },
+    { icon: HiOutlineMegaphone, label: 'Active Ads', value: String(activeAds.length) },
+    { icon: HiOutlineShoppingBag, label: 'Orders', value: String(orders.length) },
+    { icon: HiOutlineCurrencyDollar, label: 'Revenue', value: `₵${revenue}` },
+  ]
 
   return (
     <div className="p-6 sm:p-8">
       <h1 className="text-2xl font-bold text-gray-900">
-        Welcome back{user?.name ? `, ${user.name}` : ''} 👋
+        Welcome back{user?.businessName ? `, ${user.businessName}` : user?.name ? `, ${user.name}` : ''} 👋
       </h1>
       <p className="text-gray-600 mt-1">
         Here's what's happening with your store today.
@@ -37,9 +47,12 @@ function Dashboard() {
           <h2 className="text-white text-xl font-bold">Ready to reach more customers?</h2>
           <p className="text-blue-100 mt-1">List your first product or launch an ad to get started.</p>
         </div>
-        <button className="mt-5 sm:mt-0 bg-brand-orange hover:bg-brand-orange-dark text-white font-medium px-6 py-3 rounded-lg transition">
+        <Link
+          to="/dashboard/products"
+          className="mt-5 sm:mt-0 inline-block bg-brand-orange hover:bg-brand-orange-dark text-white font-medium px-6 py-3 rounded-lg transition"
+        >
           Add a Product
-        </button>
+        </Link>
       </div>
     </div>
   )

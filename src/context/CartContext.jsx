@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const CartContext = createContext(null)
 const STORAGE_KEY = 'bestmart_cart'
+const ORDERS_KEY = 'bestmart_orders'
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(() => {
@@ -37,7 +38,28 @@ export function CartProvider({ children }) {
   const count = items.reduce((sum, item) => sum + item.qty, 0)
   const total = items.reduce((sum, item) => sum + item.qty * item.price, 0)
 
-  const value = { items, addToCart, removeFromCart, updateQty, count, total }
+  // Turns the current cart into an order record (read by the seller
+  // dashboard's Orders page) and empties the cart. There's no real backend,
+  // so "placing an order" just means persisting a snapshot of it.
+  const checkout = () => {
+    if (items.length === 0) return null
+
+    const order = {
+      id: Date.now(),
+      items,
+      total,
+      status: 'Processing',
+      createdAt: new Date().toISOString(),
+    }
+
+    const existingOrders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]')
+    localStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...existingOrders]))
+    setItems([])
+
+    return order
+  }
+
+  const value = { items, addToCart, removeFromCart, updateQty, count, total, checkout }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

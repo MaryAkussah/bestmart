@@ -44,9 +44,13 @@ function Sidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
+  const handleLogout = async () => {
+    await logout()
+    // Deferred: logging out flips auth state while still on a route
+    // ProtectedRoute guards, so it reacts first and redirects to /login —
+    // an immediate navigate('/') here loses that race. Running this after
+    // the current render settles lets it have the last word.
+    setTimeout(() => navigate('/', { replace: true }), 0)
   }
 
   return (
@@ -86,9 +90,22 @@ function Sidebar() {
           <img src={logo} alt="BestMart" className="h-11 w-auto object-contain bg-white rounded-md px-2 py-1.5" />
         </div>
 
-        <div className="px-2 mb-6">
-          <p className="text-sm font-semibold text-white truncate">{user?.name || 'Seller'}</p>
-          <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+        <div className="px-2 mb-6 flex items-center gap-3">
+          {user?.businessLogo && (
+            <img
+              src={user.businessLogo}
+              alt="Business logo"
+              className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/20"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">
+              {user?.businessName || user?.name || 'Seller'}
+            </p>
+            <p className="text-xs text-gray-400 truncate">
+              {user?.businessName && user?.name ? user.name : user?.email}
+            </p>
+          </div>
         </div>
 
         <SidebarLinks />

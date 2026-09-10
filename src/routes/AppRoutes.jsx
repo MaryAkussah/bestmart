@@ -1,10 +1,17 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import UnauthWrapper from '../layouts/UnauthWrapper'
 import AuthWrapper from '../layouts/AuthWrapper'
 import ProtectedRoute from './ProtectedRoute'
 import GuestRoute from './GuestRoute'
 import NotFound from '../pages/NotFound'
 import { publicRoutes, guestRoutes, privateRoutes } from './routesConfig'
+
+// Home absorbed Shop's content — old /shop links (and any ?category=/?q=
+// they carried) still land on the right place instead of hitting NotFound.
+function ShopRedirect() {
+  const location = useLocation()
+  return <Navigate to={`/${location.search}`} replace />
+}
 
 /**
  * The single source of truth for "what renders where". Three groups,
@@ -24,6 +31,7 @@ function AppRoutes() {
         {publicRoutes.map(({ path, element: Element }) => (
           <Route key={path} path={path} element={<Element />} />
         ))}
+        <Route path="/shop" element={<ShopRedirect />} />
 
         <Route element={<GuestRoute />}>
           {guestRoutes.map(({ path, element: Element }) => (

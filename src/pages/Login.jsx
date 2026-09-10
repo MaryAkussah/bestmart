@@ -8,7 +8,8 @@ import { useAuth } from '../context/AuthContext'
 function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
-  const { login } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const { authenticate } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -25,13 +26,23 @@ function Login() {
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validate()) {
-      login({ name: form.email.split('@')[0], email: form.email })
-      const redirectTo = location.state?.from?.pathname || '/dashboard'
-      navigate(redirectTo, { replace: true })
+    if (!validate()) return
+
+    setSubmitting(true)
+    const result = await authenticate(form.email, form.password)
+    setSubmitting(false)
+
+    if (!result.ok) {
+      setErrors({ password: result.error })
+      return
     }
+
+    // No specific page to return to -> the shop, same as Signup and
+    // GuestRoute's own fallback (they must all agree — see GuestRoute.jsx).
+    const redirectTo = location.state?.from?.pathname || '/'
+    navigate(redirectTo, { replace: true })
   }
 
   return (
@@ -70,13 +81,13 @@ function Login() {
               <input type="checkbox" className="rounded border-gray-300 text-brand-blue focus:ring-brand-blue" />
               Remember me
             </label>
-            <a href="#" className="text-brand-blue font-medium hover:underline">
+            <Link to="/forgot-password" className="text-brand-blue font-medium hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
 
-          <Button type="submit" className="w-full">
-            Log In
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? 'Logging in...' : 'Log In'}
           </Button>
         </form>
 

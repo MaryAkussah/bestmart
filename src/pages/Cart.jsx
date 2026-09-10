@@ -1,18 +1,46 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineCheckCircle } from 'react-icons/hi2'
 import { useCart } from '../context/CartContext'
 import Button from '../components/ui/Button'
-import { categoryImages } from '../data/categoryImages'
+import { getPrimaryImage } from '../utils/productImages'
 
 function Cart() {
-  const { items, removeFromCart, updateQty, total } = useCart()
+  const { items, removeFromCart, updateQty, total, checkout } = useCart()
+  const [placedOrder, setPlacedOrder] = useState(null)
+
+  const handleCheckout = () => {
+    const order = checkout()
+    if (order) setPlacedOrder(order)
+  }
+
+  if (placedOrder) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <HiOutlineCheckCircle className="text-green-500 mx-auto" size={56} />
+        <h1 className="text-2xl font-bold text-gray-900 mt-4">Order placed!</h1>
+        <p className="text-gray-600 mt-2">
+          Order #{String(placedOrder.id).slice(-6)} for ₵{placedOrder.total} is on its way.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3 justify-center">
+          <Link to="/dashboard/orders">
+            <Button variant="accent">Track Your Order</Button>
+          </Link>
+          <Link to="/">
+            <Button variant="outline">Continue Shopping</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Your cart is empty</h1>
         <p className="text-gray-600 mt-2">Browse the shop and add something you like.</p>
-        <Link to="/shop">
+        <Link to="/">
           <Button variant="accent" className="mt-6">Go to Shop</Button>
         </Link>
       </div>
@@ -27,7 +55,7 @@ function Cart() {
         {items.map((item) => (
           <div key={item.id} className="flex items-center gap-4 p-4">
             <img
-              src={categoryImages[item.category]}
+              src={getPrimaryImage(item)}
               alt={item.category}
               className="w-14 h-14 rounded-lg object-cover shrink-0"
             />
@@ -59,7 +87,9 @@ function Cart() {
         <span className="text-2xl font-bold text-gray-900">₵{total}</span>
       </div>
 
-      <Button variant="accent" className="w-full mt-4">Checkout</Button>
+      <Button variant="accent" className="w-full mt-4" onClick={handleCheckout}>
+        Checkout
+      </Button>
     </div>
   )
 }

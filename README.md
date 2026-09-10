@@ -48,6 +48,7 @@ Both faces share one design system, one routing table, and one set of reusable f
 - 🛒 **Cart** (`/cart`) — add/remove items, adjust quantity, running total, all persisted to `localStorage`, with a live count badge in the navbar
 - 🔐 **Auth-aware navbar** — shows Log in/Sign up when logged out, a Dashboard link when logged in
 - 🔑 **Login / Signup** that establish a session (via Context + `localStorage`) and redirect into the dashboard
+- 🔓 **Forgot / Reset password** (`/forgot-password`, `/reset-password`) — a simulated, no-backend token flow: request a reset link, then set a new password from the link, with an explicit "invalid or expired" state for a missing/bad token
 - 📊 **Seller dashboard** (`/dashboard/*`) behind a sidebar layout — Dashboard overview, My Products, Advertise, Orders, Settings
 - 🚧 **Route protection** — dashboard routes redirect to `/login` when logged out; `/login` and `/signup` redirect to the dashboard when already logged in
 - ℹ️ **About page** with a real photo, company story, and key stats
@@ -127,6 +128,8 @@ bestmart/
 │   │   ├── Cart.jsx              # Shopping cart
 │   │   ├── Login.jsx             # Login page
 │   │   ├── Signup.jsx            # Sign up page
+│   │   ├── ForgotPassword.jsx    # Request a password reset (simulated, no backend)
+│   │   ├── ResetPassword.jsx     # Set a new password from a reset token
 │   │   ├── About.jsx             # About page
 │   │   ├── Contact.jsx           # Contact page
 │   │   ├── NotFound.jsx          # Catch-all 404
@@ -169,6 +172,12 @@ Email/password form. On successful validation it calls `login()` from `AuthConte
 
 ### `/signup` — Sign Up
 Full name, email, password + confirm password, and a required terms checkbox. On success it logs the new user in and redirects straight to `/dashboard`.
+
+### `/forgot-password` — Forgot Password
+Email form. Since there's no backend, submitting it fabricates a reset token and stores it in `localStorage` alongside the email, then shows a success panel with a "Continue to reset password" link standing in for the emailed link.
+
+### `/reset-password` — Reset Password
+Reads `?token=` from the URL (`useSearchParams`) and checks it against the token saved by Forgot Password. A valid token shows a new-password + confirm form that, on success, clears the token and redirects to `/login`. A missing/invalid token shows an explicit "link is invalid or has expired" state with a link back to Forgot Password, instead of silently accepting a bad link.
 
 ### `/about` — About
 A dark hero banner, a real photo paired with the company story, and key stats (Happy Customers, Products Listed, Trusted Sellers, Cities Served).
@@ -236,6 +245,8 @@ export const publicRoutes = [
 export const guestRoutes = [
   { path: '/login', element: Login },
   { path: '/signup', element: Signup },
+  { path: '/forgot-password', element: ForgotPassword },
+  { path: '/reset-password', element: ResetPassword },
 ]
 
 export const privateRoutes = [
@@ -429,3 +440,5 @@ Every page is mobile-first and verified at both mobile (~390px) and desktop (128
 ## Author
 
 Built by **maryakussah123@gmail.com** as part of the WomenTechsters program.
+
+For a walk-through of the specific React conventions used in this codebase (with the why/how/when behind each one, plus notes on every imported package), see [MyReactSoFar.md](MyReactSoFar.md).
