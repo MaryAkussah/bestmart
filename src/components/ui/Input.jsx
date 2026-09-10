@@ -1,10 +1,13 @@
-function Input({ label, id, error, className = '', ...props }) {
+function Input({ label, id, error, labelAction, className = '', ...props }) {
   return (
     <div className="mb-4">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">
-          {label}
-        </label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label htmlFor={id} className="block text-sm font-medium text-gray-700">
+            {label}
+          </label>
+          {labelAction}
+        </div>
       )}
       <input
         id={id}

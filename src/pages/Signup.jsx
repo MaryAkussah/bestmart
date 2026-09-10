@@ -4,11 +4,14 @@ import { HiOutlineShoppingBag } from 'react-icons/hi2'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import { useAuth } from '../context/AuthContext'
+import { getPasswordError, generatePassword, PASSWORD_REQUIREMENTS_TEXT } from '../utils/passwordPolicy'
 
 function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [copied, setCopied] = useState(false)
   const { registerAccount } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -17,13 +20,27 @@ function Signup() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const handleGeneratePassword = async () => {
+    const generated = generatePassword()
+    setForm((prev) => ({ ...prev, password: generated, confirmPassword: generated }))
+    setErrors((prev) => ({ ...prev, password: undefined, confirmPassword: undefined }))
+    setShowPassword(true)
+    try {
+      await navigator.clipboard.writeText(generated)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard access can be blocked — the field still shows it in plain text to copy by hand.
+    }
+  }
+
   const validate = () => {
     const next = {}
     if (!form.name.trim()) next.name = 'Full name is required'
     if (!form.email.trim()) next.email = 'Email is required'
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = 'Enter a valid email'
-    if (!form.password) next.password = 'Password is required'
-    else if (form.password.length < 6) next.password = 'Password must be at least 6 characters'
+    const passwordError = getPasswordError(form.password)
+    if (passwordError) next.password = passwordError
     if (form.confirmPassword !== form.password) next.confirmPassword = 'Passwords do not match'
     setErrors(next)
     return Object.keys(next).length === 0
@@ -95,17 +112,29 @@ function Signup() {
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             label="Password"
             placeholder="••••••••"
             value={form.password}
             onChange={handleChange}
             error={errors.password}
+            labelAction={
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="text-xs font-medium text-brand-blue hover:underline"
+              >
+                {copied ? 'Copied!' : 'Generate password'}
+              </button>
+            }
           />
+          {!errors.password && (
+            <p className="-mt-3 mb-4 text-xs text-gray-400">{PASSWORD_REQUIREMENTS_TEXT}</p>
+          )}
           <Input
             id="confirmPassword"
             name="confirmPassword"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             label="Confirm password"
             placeholder="••••••••"
             value={form.confirmPassword}
