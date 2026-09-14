@@ -12,7 +12,7 @@ import Button from '../../components/ui/Button'
 import { useProducts } from '../../context/ProductsContext'
 import { useAuth } from '../../context/AuthContext'
 import { getProductImages, getPrimaryImage } from '../../utils/productImages'
-import { supabase } from '../../lib/supabaseClient'
+import { api } from '../../lib/apiClient'
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB — data URLs live in localStorage, so keep this modest
 const MAX_IMAGES = 10
@@ -69,10 +69,10 @@ function Products() {
     setUploadingImages(true)
     const uploaded = await Promise.all(
       toAdd.map(async (file) => {
-        const path = `${user.id}/${crypto.randomUUID()}-${file.name}`
-        const { error } = await supabase.storage.from('product-images').upload(path, file)
-        if (error) return null
-        return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl
+        const formData = new FormData()
+        formData.append('file', file)
+        const result = await api.post('/products/images', formData, { isFormData: true })
+        return result.ok ? result.data.url : null
       })
     )
     setUploadingImages(false)

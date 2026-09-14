@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { HiOutlineChatBubbleLeftRight, HiOutlinePaperAirplane, HiOutlineArrowLeft } from 'react-icons/hi2'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import { api } from '../lib/apiClient'
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
@@ -17,38 +18,18 @@ function formatListTime(iso) {
     : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-// conversations row -> the shape the list and thread views work with, from
-// this viewer's point of view. nameMap comes from the
-// get_conversation_partner_names RPC (see 006_conversation_partner_names.sql)
-// — profiles are private by RLS, so the other participant's name/business_name
-// can't come from a plain embedded join.
-function shapeConversation(row, userId, nameMap, preview) {
-  const isBuyer = row.buyer_id === userId
-  const otherId = isBuyer ? row.seller_id : row.buyer_id
-  const otherProfile = nameMap?.[otherId]
-  const otherName = isBuyer
-    ? otherProfile?.business_name || otherProfile?.name || 'Seller'
-    : otherProfile?.name || 'Buyer'
-  const myReadAt = isBuyer ? row.buyer_last_read_at : row.seller_last_read_at
-  return {
-    id: row.id,
-    buyerId: row.buyer_id,
-    sellerId: row.seller_id,
-    otherId,
-    isBuyer,
-    otherName,
-    lastMessageAt: row.last_message_at,
-    unread: new Date(row.last_message_at) > new Date(myReadAt),
-    preview: preview || '',
-  }
-}
-
 /**
  * Real-time chat between a buyer and a seller, one thread per pair
  * (not per product). Reached either directly (/messages) or via a
  * product's "Message" button, which passes ?seller=&productId=&productName=
  * to find-or-create that thread and open it with the product pre-attached
  * to the next message sent.
+ *
+ * Reads/writes go through the Express API (server/routes/conversations.js,
+ * already-shaped camelCase responses); the live-delivery subscription below
+ * stays a direct Supabase Realtime connection — the API's message INSERT
+ * lands in the same table Realtime watches, so this needs no changes to
+ * keep working even though the write path moved.
  */
 function Messages() {
   const { user } = useAuth()
@@ -73,38 +54,11 @@ function Messages() {
   }, [selectedId, conversations])
 
   const loadConversations = async () => {
-    const { data: rows } = await supabase
-      .from('conversations')
-      .select('id, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at')
-      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-      .order('last_message_at', { ascending: false })
-
-    const otherIds = [...new Set((rows ?? []).map((r) => (r.buyer_id === user.id ? r.seller_id : r.buyer_id)))]
-    const nameMap = {}
-    if (otherIds.length > 0) {
-      const { data: nameRows } = await supabase.rpc('get_conversation_partner_names', { profile_ids: otherIds })
-      for (const n of nameRows ?? []) {
-        nameMap[n.id] = { name: n.name, business_name: n.business_name }
-      }
-    }
-
-    const ids = (rows ?? []).map((r) => r.id)
-    const previews = {}
-    if (ids.length > 0) {
-      const { data: msgRows } = await supabase
-        .from('messages')
-        .select('conversation_id, body, created_at')
-        .in('conversation_id', ids)
-        .order('created_at', { ascending: false })
-      for (const m of msgRows ?? []) {
-        if (!previews[m.conversation_id]) previews[m.conversation_id] = m.body
-      }
-    }
-
-    const shaped = (rows ?? []).map((r) => shapeConversation(r, user.id, nameMap, previews[r.id]))
-    setConversations(shaped)
+    const result = await api.get('/conversations')
+    if (!result.ok) return []
+    setConversations(result.data)
     setListLoading(false)
-    return shaped
+    return result.data
   }
 
   useEffect(() => {
@@ -129,14 +83,10 @@ function Messages() {
     ;(async () => {
       let existing = conversations.find((c) => c.sellerId === sellerId && c.isBuyer)
       if (!existing) {
-        const { data, error } = await supabase
-          .from('conversations')
-          .upsert({ buyer_id: user.id, seller_id: sellerId }, { onConflict: 'buyer_id,seller_id' })
-          .select('id')
-          .single()
-        if (!error && data) {
-          const refreshed = await loadConversations()
-          existing = refreshed.find((c) => c.id === data.id)
+        const result = await api.post('/conversations', { sellerId })
+        if (result.ok) {
+          existing = result.data
+          setConversations((prev) => [existing, ...prev.filter((c) => c.id !== existing.id)])
         }
       }
       if (existing) openConversation(existing)
@@ -147,9 +97,7 @@ function Messages() {
 
   const markRead = async (conv) => {
     if (!conv || !conv.unread) return
-    const column = conv.isBuyer ? 'buyer_last_read_at' : 'seller_last_read_at'
-    const now = new Date().toISOString()
-    await supabase.from('conversations').update({ [column]: now }).eq('id', conv.id)
+    await api.patch(`/conversations/${conv.id}/read`)
     setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, unread: false } : c)))
   }
 
@@ -157,17 +105,13 @@ function Messages() {
     setSelectedId(conv.id)
     setMobileView('thread')
     setThreadLoading(true)
-    const { data } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('conversation_id', conv.id)
-      .order('created_at', { ascending: true })
-    setMessages(data ?? [])
+    const result = await api.get(`/conversations/${conv.id}/messages`)
+    setMessages(result.ok ? result.data : [])
     setThreadLoading(false)
     markRead(conv)
   }
 
-  // Live updates for the open thread.
+  // Live updates for the open thread — direct Supabase Realtime, unchanged.
   useEffect(() => {
     if (!selectedId) return
 
@@ -201,20 +145,14 @@ function Messages() {
     if (!body || !selectedId || sending) return
 
     setSending(true)
-    const payload = {
-      conversation_id: selectedId,
-      sender_id: user.id,
+    const result = await api.post(`/conversations/${selectedId}/messages`, {
       body,
-      ...(pendingProduct ? { product_id: pendingProduct.id, product_name: pendingProduct.name } : {}),
-    }
-    const { error } = await supabase.from('messages').insert(payload)
-    if (!error) {
+      ...(pendingProduct ? { productId: pendingProduct.id, productName: pendingProduct.name } : {}),
+    })
+    if (result.ok) {
       setDraft('')
       setPendingProduct(null)
-      const conv = selectedConvRef.current
-      const column = conv?.isBuyer ? 'buyer_last_read_at' : 'seller_last_read_at'
       const now = new Date().toISOString()
-      await supabase.from('conversations').update({ last_message_at: now, [column]: now }).eq('id', selectedId)
       setConversations((prev) =>
         prev
           .map((c) => (c.id === selectedId ? { ...c, lastMessageAt: now, preview: body } : c))

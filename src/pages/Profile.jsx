@@ -4,9 +4,9 @@ import { HiOutlineUserCircle, HiOutlineShoppingBag } from 'react-icons/hi2'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabaseClient'
+import { api } from '../lib/apiClient'
 import { getPrimaryImage } from '../utils/productImages'
-import { ORDER_STATUS_STYLES, formatOrderDate, rowToLineItem } from '../utils/orderLineItems'
+import { ORDER_STATUS_STYLES, formatOrderDate } from '../utils/orderLineItems'
 
 /**
  * Every account's personal profile — distinct from a seller's shop
@@ -34,23 +34,11 @@ function Profile() {
     if (!user) return
     let active = true
 
-    supabase
-      .from('orders')
-      .select('id, created_at, status, total, order_items(id, product_id, price, qty, snapshot)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (!active) return
-        const shaped = (data ?? []).map((o) => ({
-          id: o.id,
-          createdAt: o.created_at,
-          status: o.status,
-          total: o.total,
-          items: o.order_items.map(rowToLineItem),
-        }))
-        setOrders(shaped)
-        setOrdersLoading(false)
-      })
+    api.get('/orders').then((result) => {
+      if (!active) return
+      if (result.ok) setOrders(result.data)
+      setOrdersLoading(false)
+    })
 
     return () => {
       active = false

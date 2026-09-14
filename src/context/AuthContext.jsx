@@ -1,49 +1,15 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { api } from '../lib/apiClient'
 
 const AuthContext = createContext(null)
 
-// profiles table (snake_case) <-> app user object (camelCase)
-const FIELD_MAP = {
-  name: 'name',
-  email: 'email',
-  isSeller: 'is_seller',
-  businessName: 'business_name',
-  businessCategory: 'business_category',
-  businessAddress: 'business_address',
-  storeDescription: 'store_description',
-  businessLogo: 'business_logo',
-  phone: 'phone',
-}
-
-function toRow(profile) {
-  const row = {}
-  for (const [key, value] of Object.entries(profile)) {
-    if (FIELD_MAP[key]) row[FIELD_MAP[key]] = value
-  }
-  return row
-}
-
-function rowToUser(row, fallbackEmail) {
-  if (!row) return null
-  return {
-    id: row.id,
-    name: row.name,
-    email: row.email ?? fallbackEmail,
-    isSeller: row.is_seller ?? false,
-    businessName: row.business_name || undefined,
-    businessCategory: row.business_category || undefined,
-    businessAddress: row.business_address || undefined,
-    storeDescription: row.store_description || undefined,
-    businessLogo: row.business_logo || undefined,
-    phone: row.phone || undefined,
-  }
-}
-
-async function fetchProfile(id) {
-  const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
-  return data ?? null
-}
+// Auth itself (signUp/signInWithPassword/signOut/session) stays direct to
+// Supabase — it already hashes passwords and issues real JWTs, no reason
+// to reinvent that. Everything about the `profiles` table goes through the
+// new Express API instead (see server/routes/profile.js), which does its
+// own row<->camelCase mapping server-side now — this file just sends/reads
+// plain camelCase objects.
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -53,10 +19,12 @@ export function AuthProvider({ children }) {
     let active = true
 
     async function loadSession() {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (session?.user) {
-        const profile = await fetchProfile(session.user.id)
-        if (active) setUser(rowToUser(profile, session.user.email))
+        const result = await api.get('/profile', { token: session.access_token })
+        if (active && result.ok) setUser(result.data)
       }
       if (active) setLoading(false)
     }
@@ -69,8 +37,8 @@ export function AuthProvider({ children }) {
         setUser(null)
         return
       }
-      const profile = await fetchProfile(session.user.id)
-      setUser(rowToUser(profile, session.user.email))
+      const result = await api.get('/profile', { token: session.access_token })
+      if (result.ok) setUser(result.data)
     })
 
     return () => {
@@ -81,26 +49,34 @@ export function AuthProvider({ children }) {
 
   // Used by Signup and SellerSignup: creates a real Supabase Auth account
   // (hashed password, handled entirely by Supabase — never touches our
-  // code) plus a matching row in `profiles` for everything else.
+  // code) plus a matching row in `profiles` via the API for everything else.
   const registerAccount = async ({ password, ...profile }) => {
     const { data, error } = await supabase.auth.signUp({ email: profile.email, password })
     if (error) return { ok: false, error: error.message }
 
     if (!data.session) {
       // This Supabase project requires email confirmation before a session
-      // exists, so we can't write the profile row yet (RLS needs auth.uid()
-      // to match). It gets created on their first successful login instead.
+      // exists, so we can't call the (authenticated) profile API yet. It
+      // gets created on their first successful login instead.
       return {
         ok: false,
         error: 'Check your email to confirm your account, then log in.',
       }
     }
 
-    const row = { ...toRow(profile), id: data.user.id }
-    const { error: profileError } = await supabase.from('profiles').insert(row)
-    if (profileError) return { ok: false, error: profileError.message }
+    // Passing the token straight from signUp()'s own response, rather than
+    // letting this call fetch it via getSession() itself — that call would
+    // race the auth-state-change listener above (it fires the instant
+    // signUp() returns a session, calling getSession() itself), which was
+    // unreliable in testing. PATCH is an upsert server-side (see
+    // server/routes/profile.js) — it creates the row if the listener's own
+    // concurrent fetch hasn't already, or updates it if it has, in one
+    // round trip either way, with the real values from the signup form.
+    const token = data.session.access_token
+    const result = await api.patch('/profile', profile, { token })
+    if (!result.ok) return result
 
-    setUser(rowToUser(row))
+    setUser(result.data)
     return { ok: true }
   }
 
@@ -110,17 +86,17 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { ok: false, error: error.message }
 
-    let profile = await fetchProfile(data.user.id)
-    if (!profile) {
-      // First login after confirming an email-verified signup — the profile
-      // row couldn't be created back then (no session yet). Create a
-      // minimal default one now; they can fill in shop details from Settings.
-      const row = { ...toRow({ name: email.split('@')[0], email, isSeller: false }), id: data.user.id }
-      const { data: inserted } = await supabase.from('profiles').insert(row).select().single()
-      profile = inserted ?? row
-    }
+    // Same reasoning as registerAccount — use the token signInWithPassword
+    // already gave us instead of a second, potentially-stalled getSession().
+    const token = data.session.access_token
 
-    setUser(rowToUser(profile, data.user.email))
+    // GET auto-creates a minimal default profile if one doesn't exist yet
+    // (first login after confirming an email-verified signup, where no
+    // session existed at signup time to create it then).
+    const result = await api.get('/profile', { token })
+    if (!result.ok) return result
+
+    setUser(result.data)
     return { ok: true }
   }
 
@@ -132,8 +108,8 @@ export function AuthProvider({ children }) {
   const updateUser = async (updates) => {
     if (!user) return { ok: false, error: 'Not signed in' }
 
-    const { error } = await supabase.from('profiles').update(toRow(updates)).eq('id', user.id)
-    if (error) return { ok: false, error: error.message }
+    const result = await api.patch('/profile', updates)
+    if (!result.ok) return result
 
     setUser((prev) => ({ ...prev, ...updates }))
     return { ok: true }

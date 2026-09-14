@@ -1,16 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { api } from '../lib/apiClient'
 import { useAuth } from './AuthContext'
 
 const CartContext = createContext(null)
-
-// cart_items rows -> the app's in-memory cart item shape. product_snapshot
-// holds whatever fields the product had at add-time (name/price/category/
-// images/seller/sellerId) — the cart never re-syncs against the live
-// product, same as before this was server-backed.
-function rowToItem(row) {
-  return { ...row.product_snapshot, id: row.product_id, qty: row.qty }
-}
 
 export function CartProvider({ children }) {
   const { user } = useAuth()
@@ -26,16 +18,12 @@ export function CartProvider({ children }) {
 
     let active = true
     setLoading(true)
-    supabase
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        if (active) {
-          setItems((data ?? []).map(rowToItem))
-          setLoading(false)
-        }
-      })
+    api.get('/cart').then((result) => {
+      if (active && result.ok) {
+        setItems(result.data)
+        setLoading(false)
+      }
+    })
 
     return () => {
       active = false
@@ -45,84 +33,45 @@ export function CartProvider({ children }) {
   const addToCart = async (product) => {
     if (!user) return { ok: false, error: 'Not signed in' }
 
-    const existing = items.find((item) => item.id === product.id)
+    const result = await api.post('/cart', { product })
+    if (!result.ok) return result
 
-    if (existing) {
-      const qty = existing.qty + 1
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ qty })
-        .eq('user_id', user.id)
-        .eq('product_id', product.id)
-      if (error) return { ok: false, error: error.message }
-
-      setItems((prev) => prev.map((item) => (item.id === product.id ? { ...item, qty } : item)))
-      return { ok: true }
-    }
-
-    const { error } = await supabase.from('cart_items').insert({
-      user_id: user.id,
-      product_id: product.id,
-      qty: 1,
-      product_snapshot: product,
+    setItems((prev) => {
+      const existing = prev.find((item) => item.id === product.id)
+      return existing
+        ? prev.map((item) => (item.id === product.id ? { ...item, qty: result.data.qty } : item))
+        : [...prev, result.data]
     })
-    if (error) return { ok: false, error: error.message }
-
-    setItems((prev) => [...prev, { ...product, qty: 1 }])
     return { ok: true }
   }
 
   const removeFromCart = async (id) => {
     if (!user) return
-    await supabase.from('cart_items').delete().eq('user_id', user.id).eq('product_id', id)
+    await api.delete(`/cart/${id}`)
     setItems((prev) => prev.filter((item) => item.id !== id))
   }
 
   const updateQty = async (id, qty) => {
     if (!user || qty < 1) return
-    await supabase.from('cart_items').update({ qty }).eq('user_id', user.id).eq('product_id', id)
+    await api.patch(`/cart/${id}`, { qty })
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, qty } : item)))
   }
 
   const count = items.reduce((sum, item) => sum + item.qty, 0)
   const total = items.reduce((sum, item) => sum + item.qty * item.price, 0)
 
-  // Turns the current cart into a real order: one `orders` header row plus
-  // one `order_items` row per line item (carrying seller_id so the seller
-  // dashboard can later find exactly the orders that include their
-  // products), then empties the cart.
+  // Turns the current cart into a real order via POST /api/checkout — one
+  // `orders` header row plus one `order_items` row per line item, several
+  // writes that need to succeed together, which is exactly the kind of
+  // logic that belongs server-side rather than as separate client calls.
   const checkout = async () => {
     if (!user || items.length === 0) return { ok: false, error: 'Your cart is empty' }
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({ user_id: user.id, total, status: 'Processing' })
-      .select()
-      .single()
-    if (orderError) return { ok: false, error: orderError.message }
+    const result = await api.post('/checkout')
+    if (!result.ok) return result
 
-    const orderItemRows = items.map((item) => {
-      const { id, qty, price, ...snapshot } = item
-      return {
-        order_id: order.id,
-        product_id: id,
-        seller_id: item.sellerId ?? null,
-        buyer_id: user.id,
-        price,
-        qty,
-        snapshot,
-      }
-    })
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItemRows)
-    if (itemsError) return { ok: false, error: itemsError.message }
-
-    await supabase.from('cart_items').delete().eq('user_id', user.id)
     setItems([])
-
-    return {
-      ok: true,
-      order: { id: order.id, items, total, status: order.status, createdAt: order.created_at },
-    }
+    return { ok: true, order: result.data }
   }
 
   const value = { items, loading, addToCart, removeFromCart, updateQty, count, total, checkout }

@@ -1,6 +1,6 @@
 // Shared between the seller's Orders dashboard and the buyer's Profile page
-// — both render order_items rows the same way, just scoped to a different
-// audience (seller's own products vs. a buyer's own purchases).
+// for consistent order display — the row shaping itself now happens
+// server-side (server/routes/orders.js, server/routes/seller.js).
 
 export const ORDER_STATUS_STYLES = {
   Processing: 'bg-yellow-100 text-yellow-800',
@@ -10,10 +10,4 @@ export const ORDER_STATUS_STYLES = {
 
 export function formatOrderDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-// order_items row -> the display shape the UI expects (name, category,
-// images, etc. live in `snapshot`, taken at checkout time).
-export function rowToLineItem(row) {
-  return { ...row.snapshot, id: row.product_id, qty: row.qty, price: row.price }
 }

@@ -4,7 +4,7 @@ import { HiOutlineCube, HiOutlineMegaphone, HiOutlineShoppingBag, HiOutlineCurre
 import { useAuth } from '../../context/AuthContext'
 import { useProducts } from '../../context/ProductsContext'
 import { useLocalStorageList } from '../../hooks/useLocalStorageList'
-import { supabase } from '../../lib/supabaseClient'
+import { api } from '../../lib/apiClient'
 
 function Dashboard() {
   const { user } = useAuth()
@@ -16,18 +16,9 @@ function Dashboard() {
     if (!user) return
     let active = true
 
-    supabase
-      .from('order_items')
-      .select('order_id, price, qty')
-      .eq('seller_id', user.id)
-      .then(({ data }) => {
-        if (!active) return
-        const rows = data ?? []
-        setOrderStats({
-          orderCount: new Set(rows.map((r) => r.order_id)).size,
-          revenue: rows.reduce((sum, r) => sum + r.price * r.qty, 0),
-        })
-      })
+    api.get('/seller/stats').then((result) => {
+      if (active && result.ok) setOrderStats(result.data)
+    })
 
     return () => {
       active = false

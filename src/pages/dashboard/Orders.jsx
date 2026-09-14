@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { HiOutlineShoppingBag } from 'react-icons/hi2'
-import { supabase } from '../../lib/supabaseClient'
+import { api } from '../../lib/apiClient'
 import { useAuth } from '../../context/AuthContext'
 import { getPrimaryImage } from '../../utils/productImages'
-import { ORDER_STATUS_STYLES, formatOrderDate, rowToLineItem } from '../../utils/orderLineItems'
+import { formatOrderDate, ORDER_STATUS_STYLES } from '../../utils/orderLineItems'
 
 const STATUS_FLOW = ['Processing', 'Shipped', 'Delivered']
 
@@ -16,30 +16,11 @@ function Orders() {
     if (!user) return
     let active = true
 
-    supabase
-      .from('orders')
-      .select('id, created_at, status, order_items(id, product_id, price, qty, snapshot)')
-      .eq('order_items.seller_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (!active) return
-        const shaped = (data ?? [])
-          .filter((o) => o.order_items.length > 0)
-          .map((o) => {
-            const items = o.order_items.map(rowToLineItem)
-            return {
-              id: o.id,
-              createdAt: o.created_at,
-              status: o.status,
-              items,
-              // Only this seller's share of the order — a single checkout
-              // can include other sellers' products too.
-              total: items.reduce((sum, item) => sum + item.qty * item.price, 0),
-            }
-          })
-        setOrders(shaped)
-        setLoading(false)
-      })
+    api.get('/seller/orders').then((result) => {
+      if (!active) return
+      if (result.ok) setOrders(result.data)
+      setLoading(false)
+    })
 
     return () => {
       active = false
@@ -47,15 +28,10 @@ function Orders() {
   }, [user])
 
   const advanceStatus = async (id) => {
-    const order = orders.find((o) => o.id === id)
-    const nextIndex = STATUS_FLOW.indexOf(order.status) + 1
-    if (nextIndex >= STATUS_FLOW.length) return
-    const nextStatus = STATUS_FLOW[nextIndex]
+    const result = await api.patch(`/seller/orders/${id}/status`)
+    if (!result.ok) return
 
-    const { error } = await supabase.from('orders').update({ status: nextStatus }).eq('id', id)
-    if (error) return
-
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)))
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: result.data.status } : o)))
   }
 
   if (loading) return null

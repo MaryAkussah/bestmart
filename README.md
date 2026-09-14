@@ -20,6 +20,7 @@ This project was built as part of the **WomenTechsters** program to demonstrate 
 - [Shared Components](#shared-components)
 - [Design System](#design-system)
 - [Form Handling & Validation](#form-handling--validation)
+- [Component Lifecycle: State, Mounting, and Re-renders](#component-lifecycle-state-mounting-and-re-renders)
 - [Getting Started](#getting-started)
 - [Available Scripts](#available-scripts)
 - [Responsive Behavior](#responsive-behavior)
@@ -344,6 +345,65 @@ Validation rules currently implemented:
 - **Email format:** checked with a regular expression (`/^\S+@\S+\.\S+$/`)
 - **Password length:** minimum 6 characters (Sign Up)
 - **Password match:** confirm password must equal password (Sign Up)
+
+---
+
+## Component Lifecycle: State, Mounting, and Re-renders
+
+Three ideas that explain almost everything a React component does. In simple terms, with a real example from this codebase for each.
+
+### 1. How a component changes state — and how
+
+A component's state lives in a `useState` call. You never change the variable directly — you call the setter function React gave you, React schedules a re-render, and the component's *next* render uses the new value.
+
+Example — the wishlist heart on `ProductCard.jsx`:
+
+```jsx
+const [wishlisted, setWishlisted] = useState(false)
+
+<button onClick={() => setWishlisted((prev) => !prev)}>
+  {wishlisted ? <HiHeart /> : <HiOutlineHeart />}
+</button>
+```
+
+Clicking the button doesn't repaint the icon directly — it calls `setWishlisted`, which tells React "this component's state changed." React then re-runs `ProductCard`'s function body with the new `wishlisted` value, and the icon it returns this time reflects it.
+
+### 2. Mounting and unmounting (showing and going away)
+
+A component **mounts** the first time React renders it into the page, and **unmounts** when React removes it — almost always because a condition that was true just became false. Nothing is hidden with CSS here; the element is actually created and destroyed.
+
+Example — the mobile menu in `Navbar.jsx`:
+
+```jsx
+{open && (
+  <div className="lg:hidden border-t border-gray-200 bg-white px-4 pb-4">
+    {/* mobile links */}
+  </div>
+)}
+```
+
+When `open` is `false`, that `<div>` doesn't exist in the DOM at all — React never mounted it. Tapping the hamburger icon sets `open` to `true`, and React mounts the menu for the first time. Tapping again sets it back to `false`, and React unmounts it — any state that lived *inside* it would be lost, because the component instance itself is gone, not just visually hidden.
+
+### 3. What triggers a re-render
+
+Three things make a component re-run its function body and produce new output:
+
+1. **Its own state changes** — any `setX()` call.
+2. **Its props change** — the parent passed it something different this time.
+3. **A Context value it reads changes** — every component using that context's hook re-renders together, automatically.
+
+Example of #3 — `AuthContext.jsx` and `Navbar.jsx`:
+
+```jsx
+// AuthContext.jsx — after a successful login:
+setUser(loggedInUser)
+
+// Navbar.jsx — never calls setUser itself, just reads the context:
+const { isAuthenticated } = useAuth()
+{isAuthenticated ? <Link to="/dashboard">Dashboard</Link> : <Link to="/login">Log in</Link>}
+```
+
+`Navbar` doesn't know or care *when* `AuthContext` changes — it just reads `isAuthenticated` via `useAuth()`. The instant `AuthContext` calls its own `setUser`, **every** component subscribed to that context — `Navbar`, `Sidebar`, `ProductCard`, the route guards — re-renders on its own, without anyone passing props down by hand. That's the actual payoff of using Context here instead of prop-drilling: one state change, many components update themselves.
 
 ---
 
